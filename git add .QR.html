@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Water Bodies QR Directory</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 flex flex-col h-screen overflow-hidden">
+
+    <div class="w-full bg-white h-16 shadow-md z-20 flex justify-between items-center px-6 border-b border-gray-200 shrink-0">
+        <a href="map.html" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all text-decoration-none">
+            <h2 class="text-2xl font-black text-blue-600 tracking-tight">EcoJal</h2>
+            <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+                🔲 QR Directory
+            </span>
+        </a>
+        <div>
+            <button onclick="window.location.href='map.html'" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1 cursor-pointer">
+                ⬅️ Back to Map Dashboard
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 max-w-7xl w-full mx-auto space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center space-y-4">
+            <div class="max-w-xl mx-auto space-y-2">
+                <h1 class="text-2xl font-black text-gray-800">Scan & Verify Water Bodies</h1>
+                <p class="text-xs text-gray-500">Search for any specific water body across Delhi to view its official live telemetry parameters, active compliance status, or instantly route a verified localized complaint desk.</p>
+            </div>
+            
+            <div class="max-w-md mx-auto relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 text-sm">🔍</span>
+                <input type="text" id="qr-search-input" onkeyup="filterWaterBodies()" placeholder="Search by lake name, token ID, or area zone..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-xs shadow-inner">
+            </div>
+        </div>
+
+        <div id="qr-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            </div>
+    </div>
+
+    <div id="qr-details-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 relative text-center">
+            <button onclick="closeDetailsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer">✕</button>
+            
+            <h3 id="modal-lake-name" class="text-xl font-black text-gray-800 mb-1">Lake Name</h3>
+            <span id="modal-lake-zone" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 inline-block mb-4">Zone Type</span>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6 max-w-[200px] mx-auto mb-4 shadow-inner flex flex-col items-center justify-center relative group">
+                <div id="modal-qr-graphic" class="w-36 h-36 opacity-90"></div>
+                <div class="text-[9px] font-mono text-gray-400 mt-2 tracking-widest" id="modal-lake-token">TOKEN-000</div>
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-left text-xs space-y-1.5 mb-5">
+                <div class="flex justify-between border-b border-gray-200/60 pb-1"><span class="text-gray-500 font-medium">Jurisdiction Desk:</span> <span id="modal-lake-desk" class="font-bold text-gray-700">MCD / DJB</span></div>
+                <div class="flex justify-between"><span class="text-gray-500 font-medium">Live GIS Status:</span> <span id="modal-lake-status" class="font-bold">Healthy 🟢</span></div>
+            </div>
+
+            <div class="space-y-2">
+                <button id="modal-complaint-btn" onclick="triggerDirectComplaint()" class="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold py-3 rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                    🚨 File an Instant Complaint
+                </button>
+                <button onclick="closeDetailsModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2.5 rounded-xl text-xs transition-all cursor-pointer">
+                    Cancel & Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const lakesData = [
+            { id: 1, name: "Bhalswa Lake", coords: [28.7408, 77.1688], token: "BHA-001", status: "Healthy 🟢", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 2, name: "Hauz Khas Lake", coords: [28.5463, 77.2036], token: "HAZ-002", status: "Critical 🔴", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 3, name: "Sanjay Lake", coords: [28.6115, 77.3015], token: "SAN-003", status: "Critical 🔴", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 4, name: "Najafgarh Jheel", coords: [28.4984, 76.9424], token: "NAJ-004", status: "Average 🟡", zone: "Industrial Area", desk: "DDA / DPCC Fine Desk" },
+            { id: 5, name: "Okhla Sanctuary Area", coords: [28.5645, 77.3120], token: "OKH-005", status: "Healthy 🟢", zone: "Industrial Area", desk: "DDA / DPCC Fine Desk" },
+            { id: 6, name: "Purana Qila Lake", coords: [28.6094, 77.2436], token: "PUR-006", status: "Healthy 🟢", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 7, name: "Ghazipur Jheel", coords: [28.6212, 77.3148], token: "GHA-007", status: "Critical 🔴", zone: "Industrial Area", desk: "DDA / DPCC Fine Desk" },
+            { id: 8, name: "Deer Park Lake", coords: [28.5492, 77.1950], token: "DEE-008", status: "Healthy 🟢", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 9, name: "Lodhi Gardens Pond", coords: [28.5930, 77.2198], token: "LOD-009", status: "Average 🟡", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 10, name: "Mayur Vihar Pocket-3 Pond", coords: [28.6040, 77.2940], token: "MAY-010", status: "Critical 🔴", zone: "Residential Area", desk: "MCD / Delhi Jal Board" },
+            { id: 11, name: "Jahangirpuri Marsh Pond", coords: [28.7290, 77.1820], token: "JAH-011", status: "Average 🟡", zone: "Industrial Area", desk: "DDA / DPCC Fine Desk" },
+            { id: 12, name: "Dwarka Sector-23 Water Body", coords: [28.5350, 76.9750], token: "DWA-012", status: "Average 🟡", zone: "Residential Area", desk: "MCD / Delhi Jal Board" }
+        ];
+
+        let selectedLakeId = null;
+
+        function generateFakeQR_SVG(tokenSeed) {
+            return `
+                <svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="100" height="100" fill="none"/>
+                    <rect x="0" y="0" width="25" height="25" fill="#1e3a8a" stroke="white" stroke-width="2"/>
+                    <rect x="5" y="5" width="15" height="15" fill="white"/>
+                    <rect x="9" y="9" width="7" height="7" fill="#1e3a8a"/>
+                    
+                    <rect x="75" y="0" width="25" height="25" fill="#1e3a8a" stroke="white" stroke-width="2"/>
+                    <rect x="80" y="5" width="15" height="15" fill="white"/>
+                    <rect x="84" y="9" width="7" height="7" fill="#1e3a8a"/>
+                    
+                    <rect x="0" y="75" width="25" height="25" fill="#1e3a8a" stroke="white" stroke-width="2"/>
+                    <rect x="5" y="80" width="15" height="15" fill="white"/>
+                    <rect x="9" y="84" width="7" height="7" fill="#1e3a8a"/>
+
+                    <path d="M35 5h10v10H35zM55 0h15v5H55zM40 20h25v5H40zM30 35h10v15H30zM50 30h15v10H50zM75 40h20v10H75zM0 45h15v15H0zM45 55h20v5H45zM70 60h15v20H70zM25 75h15v10H25zM50 75h10v20H50zM85 85h10v10H85z" fill="#334155"/>
+                    <circle cx="50" cy="50" r="6" fill="#2563eb"/>
+                </svg>
+            `;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const gridContainer = document.getElementById("qr-grid-container");
+            gridContainer.innerHTML = "";
+
+            lakesData.forEach(lake => {
+                const card = document.createElement("div");
+                card.className = "qr-card bg-white p-4 rounded-2xl shadow-xs border border-gray-200 flex flex-col items-center justify-between gap-3 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer group";
+                card.setAttribute("onclick", `openDetailsModal(${lake.id})`);
+                card.setAttribute("data-name", lake.name.toLowerCase());
+                card.setAttribute("data-token", lake.token.toLowerCase());
+                card.setAttribute("data-zone", lake.zone.toLowerCase());
+
+                card.innerHTML = `
+                    <div class="w-28 h-28 bg-gray-50 border border-gray-100 p-2 rounded-xl group-hover:scale-105 transition-all">
+                        ${generateFakeQR_SVG(lake.token)}
+                    </div>
+                    <div class="text-center w-full">
+                        <h4 class="font-bold text-gray-800 text-xs truncate">${lake.name}</h4>
+                        <p class="text-[10px] text-gray-400 font-mono tracking-wider mt-0.5">${lake.token}</p>
+                    </div>
+                    <span class="w-full text-center text-[10px] py-1 font-bold rounded-lg ${
+                        lake.status.includes('Healthy') ? 'bg-green-50 text-green-700 border border-green-200' :
+                        lake.status.includes('Average') ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                        'bg-red-50 text-red-700 border border-red-200'
+                    }">${lake.status}</span>
+                `;
+                gridContainer.appendChild(card);
+            });
+        });
+
+        function filterWaterBodies() {
+            const query = document.getElementById("qr-search-input").value.toLowerCase();
+            const cards = document.querySelectorAll(".qr-card");
+
+            cards.forEach(card => {
+                const name = card.getAttribute("data-name");
+                const token = card.getAttribute("data-token");
+                const zone = card.getAttribute("data-zone");
+
+                if (name.includes(query) || token.includes(query) || zone.includes(query)) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function openDetailsModal(id) {
+            const lake = lakesData.find(l => l.id === id);
+            if (!lake) return;
+
+            selectedLakeId = id;
+            document.getElementById("modal-lake-name").innerText = lake.name;
+            document.getElementById("modal-lake-token").innerText = lake.token;
+            document.getElementById("modal-lake-zone").innerText = lake.zone;
+            document.getElementById("modal-lake-desk").innerText = lake.desk;
+            document.getElementById("modal-lake-status").innerText = lake.status;
+            document.getElementById("modal-qr-graphic").innerHTML = generateFakeQR_SVG(lake.token);
+
+            document.getElementById("qr-details-modal").classList.remove("hidden");
+        }
+
+        function closeDetailsModal() {
+            document.getElementById("qr-details-modal").classList.add("hidden");
+            selectedLakeId = null;
+        }
+
+        // REDIRECT AND TRIGGER AUTOMATIC POP-UP
+        function triggerDirectComplaint() {
+            const lake = lakesData.find(l => l.id === selectedLakeId);
+            if (!lake) return;
+
+            // Notice text alert removed or kept minimal, redirecting instantly to map configuration login parameters
+            window.location.href = `map.html?triggerAction=login&lakeTarget=${encodeURIComponent(lake.name)}&zoneTarget=${encodeURIComponent(lake.zone)}`;
+        }
+    </script>
+</body>
+</html>

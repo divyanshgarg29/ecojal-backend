@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Live GIS Map</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .leaflet-container {
+            background: #f3f4f6 !important;
+        }
+        /* Style for distance text on map */
+        .distance-label {
+            background: white;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: bold;
+            font-size: 10px;
+            color: #1d4ed8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 h-screen overflow-hidden flex flex-col relative">
+        
+    <div class="w-full bg-white h-16 shadow-md z-20 flex justify-between items-center px-6 border-b border-gray-200 shrink-0">
+        <a href="index.html" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all text-decoration-none">
+            <h2 class="text-2xl font-black text-blue-600 tracking-tight">EcoJal</h2>
+            <span class="bg-green-100 text-green-800 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Live GIS
+            </span>
+        </a>
+        
+        <div class="flex items-center gap-3">
+            <button onclick="openComplianceModal()" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer text-xs">
+                🛰️ Satellite Audit
+            </button>
+            
+            <button onclick="window.location.href='QR.html'" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer text-xs">
+                🔲 View QR
+            </button>
+
+            <button onclick="alert('Opening QR Code Scanner... 📸')" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer text-xs">
+                📱 Scan QR Code
+            </button>
+            <button id="main-login-btn" onclick="openLoginModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1 cursor-pointer text-xs">
+                🔐 Login
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex relative min-h-0 w-full h-full">
+        
+        <div id="default-sidebar" class="w-1/4 bg-white h-full shadow-2xl border-r border-gray-200 flex flex-col z-10 shrink-0">
+            <div class="p-4 bg-blue-50/50 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold text-blue-900 text-lg" id="portal-title">Public Dashboard</h3>
+                <span id="role-badge" class="hidden text-xs font-bold px-2 py-0.5 rounded-full"></span>
+            </div>
+            
+            <div class="p-4 flex-1 overflow-y-auto space-y-4 flex flex-col min-h-0">
+                <div id="reporting-container"></div>
+                <div id="role-specific-content" class="hidden flex flex-col min-h-0"></div>
+
+                <div id="ranking-section" class="bg-gray-50 p-3 rounded-xl border border-gray-100 flex-1 min-h-0 flex flex-col">
+                    <h3 class="font-bold text-gray-700 mb-2 flex items-center gap-1 shrink-0 text-xs">🏆 Water Bodies Ranking</h3>
+                    <ol class="space-y-1.5 text-xs overflow-y-auto pr-1 flex-1">
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-green-500"><span class="font-medium">1. Bhalswa Lake</span> <span class="text-green-600 font-semibold">98 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-teal-500"><span class="font-medium">2. Purana Qila Lake</span> <span class="text-teal-600 font-semibold">92 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-emerald-500"><span class="font-medium">3. Okhla Sanctuary Area</span> <span class="text-emerald-600 font-semibold">89 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-emerald-400"><span class="font-medium">4. Deer Park Lake</span> <span class="text-emerald-500 font-semibold">87 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-yellow-500"><span class="font-medium">5. Hauz Khas Lake</span> <span class="text-yellow-600 font-semibold">82 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-amber-500"><span class="font-medium">6. Lodhi Gardens Pond</span> <span class="text-amber-600 font-semibold">78 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-yellow-400"><span class="font-medium">7. Jahangirpuri Marsh Pond</span> <span class="text-yellow-600 font-semibold">73 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-amber-400"><span class="font-medium">8. Dwarka Sector-23 Water Body</span> <span class="text-amber-600 font-semibold">68 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-orange-500"><span class="font-medium">9. Najafgarh Jheel</span> <span class="text-orange-600 font-semibold">61 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-orange-400"><span class="font-medium">10. Ghazipur Jheel</span> <span class="text-orange-500 font-semibold">58 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-red-400"><span class="font-medium">11. Mayur Vihar Pocket-3 Pond</span> <span class="text-red-400 font-semibold">50 pts</span></li>
+                        <li class="flex justify-between p-2 bg-white rounded shadow-xs border-l-4 border-red-600"><span class="font-medium">12. Sanjay Lake</span> <span class="text-red-600 font-semibold">45 pts</span></li>
+                    </ol>
+                </div>
+
+                <button id="analytics-btn" onclick="window.location.href='analytics.html'" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 px-4 rounded-xl border border-blue-200 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer mt-auto shrink-0 text-xs">
+                    📊 Show Analytics
+                </button>
+            </div>
+        </div>
+
+        <div id="map" class="w-3/4 h-full relative z-0"></div>
+    </div>
+
+    <div id="login-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer">✕</button>
+            <h3 class="text-2xl font-bold text-gray-800 text-center mb-4">Account Login</h3>
+            
+            <div class="flex justify-center gap-4 mb-6 font-semibold text-xs text-gray-600 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="role" value="user" checked onchange="toggleLoginFields()" class="w-4 h-4 text-blue-600"> Citizen</label>
+                <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="role" value="admin" onchange="toggleLoginFields()" class="w-4 h-4 text-blue-600"> Admin</label>
+                <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="role" value="field_staff" onchange="toggleLoginFields()" class="w-4 h-4 text-blue-600"> Field Staff</label>
+            </div>
+
+            <div id="login-inputs-container">
+                <div id="otp-flow" class="space-y-4">
+                    <input type="tel" placeholder="Enter your phone number" class="w-full p-4 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm">
+                    <button type="button" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 rounded-xl transition-all text-xs">Generate OTP</button>
+                    <input type="text" placeholder="Enter OTP" class="w-full p-4 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm">
+                </div>
+                <div id="password-flow" class="space-y-4 hidden">
+                    <input type="text" placeholder="Enter Security ID" class="w-full p-4 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm">
+                    <input type="password" placeholder="Enter Password" class="w-full p-4 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm">
+                </div>
+            </div>
+            <button onclick="handleVerification()" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-lg shadow-md transition-all cursor-pointer">Verify & Login</button>
+        </div>
+    </div>
+
+    <div id="report-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 relative max-h-[95vh] overflow-y-auto">
+            <button onclick="closeReportModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer">✕</button>
+            
+            <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">📢 Report Water Body Issues</h3>
+            <p class="text-xs text-gray-500 mb-4">Provide accurate details to geo-route complaints to the correct jurisdictional desk.</p>
+
+            <div class="space-y-1.5 mb-4">
+                <button type="button" onclick="alert('Opening System Live Camera... 📸')" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 px-4 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center gap-2 transition-all cursor-pointer text-xs">
+                    📸 Capture Live Photo
+                </button>
+                <p class="text-[10px] text-red-500 font-medium text-center bg-red-50/60 p-1.5 rounded-lg border border-red-100">
+                    ⚠️ Strictly live camera capture required. Gallery uploads are blocked.
+                </p>
+            </div>
+
+            <div class="space-y-3 mb-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                <div class="flex justify-between items-center">
+                    <label class="block text-xs font-bold text-gray-700">📍 Spatial Classification</label>
+                    <button type="button" onclick="fetchLiveLocation()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1 px-3 rounded-lg flex items-center gap-1 transition-all cursor-pointer text-[11px]">
+                        🛰️ Sync GPS Location
+                    </button>
+                </div>
+                
+                <div id="location-status" class="text-[11px] text-gray-500 font-semibold text-center py-1 bg-white rounded border border-gray-100">
+                    Awaiting GPS calibration to auto-classify zone...
+                </div>
+
+                <div class="hidden grid grid-cols-2 gap-2 text-xs pt-1" id="classification-chips">
+                    <div id="chip-industrial" class="p-2 rounded-xl border text-center font-bold flex flex-col justify-center bg-gray-100 text-gray-400 border-gray-200">
+                        <span>🏭 Industrial Area</span>
+                        <span class="text-[9px] font-normal mt-0.5">(Auto-Route: DDA/DPCC)</span>
+                    </div>
+                    <div id="chip-residential" class="p-2 rounded-xl border text-center font-bold flex flex-col justify-center bg-gray-100 text-gray-400 border-gray-200">
+                        <span>🏡 Residential/Rural</span>
+                        <span class="text-[9px] font-normal mt-0.5">(Auto-Route: MCD/DJB)</span>
+                    </div>
+                </div>
+
+                <div id="routed-desk-display" class="hidden text-center text-xs font-bold p-2 rounded-lg"></div>
+            </div>
+
+            <div id="problem-tags-container" class="space-y-2 mb-4 hidden">
+                <label class="block text-xs font-bold text-gray-700">📝 Select Problem Categories <span class="text-[10px] text-gray-400 font-normal">(Select Multiple)</span></label>
+                <div id="residential-tags" class="hidden flex flex-wrap gap-2">
+                    <button type="button" onclick="toggleTag(this, 'MCD/DJB Desk')" class="problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-500 text-xs font-medium text-gray-600 transition-all cursor-pointer">🌿 Algae Bloom</button>
+                    <button type="button" onclick="toggleTag(this, 'MCD/DJB Desk')" class="problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-500 text-xs font-medium text-gray-600 transition-all cursor-pointer">🛢️ Plastic/Garbage</button>
+                    <button type="button" onclick="toggleTag(this, 'MCD/DJB Desk')" class="problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-500 text-xs font-medium text-gray-600 transition-all cursor-pointer">💧 Sewage Leakage</button>
+                </div>
+                <div id="industrial-tags" class="hidden flex flex-wrap gap-2">
+                    <button type="button" onclick="toggleTag(this, 'DPCC Desk (Pollution Head)')" class="problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-red-500 text-xs font-medium text-gray-600 transition-all cursor-pointer">🛑 Chemical Effluents</button>
+                    <button type="button" onclick="toggleTag(this, 'DDA Desk (Land Matrix)')" class="problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-500 text-xs font-medium text-gray-600 transition-all cursor-pointer">🏗️ Land Encroachment</button>
+                    <button type="button" onclick="toggleTag(this, 'DDA Desk (Land Matrix)')" class="problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-500 text-xs font-medium text-gray-600 transition-all cursor-pointer">🪵 Debris Dumping</button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5 mb-4">
+                <label class="block text-xs font-bold text-gray-700">Additional Remarks / Description</label>
+                <textarea id="complaint-remarks-field" rows="2" placeholder="Provide any specific descriptive notes if needed..." class="w-full p-2.5 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-xs resize-none"></textarea>
+            </div>
+
+            <button onclick="alert('Report Logged! Dispatching Ticket to designated desk. 🎉'); closeReportModal();" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md transition-all cursor-pointer text-xs">
+                🚀 Submit Authenticated Report
+            </button>
+        </div>
+    </div>
+
+    <div id="compliance-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden p-4 animate-fade-in">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-indigo-100 flex flex-col max-h-[90vh]">
+            <div class="bg-gradient-to-r from-indigo-700 via-blue-700 to-indigo-800 text-white p-4 flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🛰️</span>
+                    <div>
+                        <h3 class="font-black text-sm tracking-wide">3-Stage Satellite Audit System</h3>
+                        <p class="text-[9px] text-indigo-100 font-medium uppercase tracking-wider">Automated Satellite Space Verification Engine & Decentralized Escrow Ledger</p>
+                    </div>
+                </div>
+                <button onclick="closeComplianceModal()" class="text-white hover:text-gray-200 font-bold text-2xl p-1 cursor-pointer transition-all">&times;</button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto space-y-4 text-[11px] text-gray-700 leading-relaxed bg-slate-50/50">
+                <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl space-y-1.5">
+                    <label class="block text-[10px] font-black text-slate-700 uppercase tracking-wider">Radar Rule: Satellite Pass Frequency Status</label>
+                    <select class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 text-xs">
+                        <option>Every 6 Hours (Multi-Satellite Constellation Sync)</option>
+                        <option>Every 12 Hours (High-Revisit Overlay)</option>
+                        <option>Real-Time Priority Tasking (Commercial SAR Request)</option>
+                    </select>
+                </div>
+
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs space-y-2">
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-1.5">
+                        <span class="font-black text-indigo-700 text-xs">📐 Stage 1: Area Shrunk Check (Anti-Encroachment Land Audit)</span>
+                        <span class="bg-green-100 text-green-800 font-black px-2 py-0.5 rounded text-[9px]">Area Stability Index: 100% (No Encroachment)</span>
+                    </div>
+                    <p class="font-medium text-gray-600"><b>Technical Logic:</b> Satellite data metrics automatically measure baseline area limits inside your original GeoJSON Khasra boundary polygon maps.</p>
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 font-mono text-gray-500 text-[10px]">
+                        $$\text{Area Change Percentage } (\Delta A) = \left( \frac{A_{\text{original}} - A_{\text{satellite}}}{A_{\text{original}}} \right) \times 100$$
+                        $$\text{If } \Delta A > 1\% \longrightarrow \text{🚨 STATUS: FRAUD ALERT: Encroachment Detected}$$
+                    </div>
+                </div>
+
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs space-y-2">
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-1.5">
+                        <span class="font-black text-indigo-700 text-xs">🎛️ Stage 2: Spectral Index Check (Water Quality & Effluent Audit)</span>
+                        <span class="bg-blue-100 text-blue-800 font-black px-2 py-0.5 rounded text-[9px]">Spectral Analysis: NDWI 0.45 (Passed)</span>
+                    </div>
+                    <p class="font-medium text-gray-600"><b>Technical Logic:</b> Algorithmic analysis targets specific evaluation criteria models toggled dynamically via zonal structures:</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                        <div class="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-lg space-y-1">
+                            <p class="font-bold text-emerald-800 text-[10px] uppercase">🏡 Residential Zone Matrix</p>
+                            <p class="text-gray-600 font-medium">NDWI (Water Clarity) and NDVI (Algae/Greenery) index tracking identifies biological degradation parameters.</p>
+                        </div>
+                        <div class="bg-amber-50/50 border border-amber-100 p-2.5 rounded-lg space-y-1">
+                            <p class="font-bold text-amber-800 text-[10px] uppercase">🏭 Industrial Zone Matrix</p>
+                            <p class="text-gray-600 font-medium">Short-Wave Infrared (SWIR) telemetry scanning profiles trace hazardous heavy metal dumps and chemical effluent dumps.</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 font-mono text-center text-gray-500 text-[10px]">
+                        $$\text{NDWI} = \frac{\text{Green (Band 3)} - \text{NIR (Band 8)}}{\text{Green (Band 3)} + \text{NIR (Band 8)}}$$
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-4 rounded-xl shadow-md space-y-2.5">
+                    <p class="font-black text-amber-400 text-xs flex items-center gap-1">💰 Escrow Payment Integration Matrix Model</p>
+                    <div class="grid grid-cols-2 gap-2 text-[10px] font-medium text-slate-100">
+                        <div class="bg-white/5 border border-white/10 p-2 rounded-lg"><b>🟢 Day 2 (40%):</b> Worker photo verification + GPS bounds check.</div>
+                        <div class="bg-white/5 border border-white/10 p-2 rounded-lg"><b>🟢 Day 30 (20%):</b> Concurrent successful clearance loops across 3 stages.</div>
+                        <div class="bg-white/5 border border-white/10 p-2 rounded-lg"><b>🟢 Day 60 (20%):</b> Secondary validation overpass tracking confirmation.</div>
+                        <div class="bg-white/5 border border-white/10 p-2 rounded-lg"><b>🟢 Day 90 (20%):</b> Terminal maintenance check clears to lock Green status.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 bg-gray-50 border-t border-gray-100 text-right shrink-0">
+                <button onclick="closeComplianceModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-1.5 rounded-xl text-[10px] cursor-pointer shadow-sm">Close Audit Console</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let activeLayers = [];
+
+        const lakesData = [
+            { id: 1, name: "Bhalswa Lake", coords: [28.7408, 77.1688], token: "BHA-001", status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 2, name: "Hauz Khas Lake", coords: [28.5463, 77.2036], token: "HAZ-002", status: "Critical 🔴", zone: "Residential Area" },
+            { id: 3, name: "Sanjay Lake", coords: [28.6115, 77.3015], token: "SAN-003", status: "Critical 🔴", zone: "Residential Area" },
+            { id: 4, name: "Najafgarh Jheel", coords: [28.4984, 76.9424], token: "NAJ-004", status: "Average 🟡", zone: "Industrial Area" },
+            { id: 5, name: "Okhla Bird Sanctuary Area", coords: [28.5645, 77.3120], token: "OKH-005", status: "Healthy 🟢", zone: "Industrial Area" },
+            { id: 6, name: "Purana Qila Lake", coords: [28.6094, 77.2436], token: "PUR-006", status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 7, name: "Ghazipur Jheel", coords: [28.6212, 77.3148], token: "GHA-007", status: "Critical 🔴", zone: "Industrial Area" },
+            { id: 8, name: "Deer Park Lake", coords: [28.5492, 77.1950], token: "DEE-008", status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 9, name: "Lodhi Gardens Pond", coords: [28.5930, 77.2198], token: "LOD-009", status: "Average 🟡", zone: "Residential Area" },
+            { id: 10, name: "Mayur Vihar Pocket-3 Pond", coords: [28.6040, 77.2940], token: "MAY-010", status: "Critical 🔴", zone: "Residential Area" },
+            { id: 11, name: "Jahangirpuri Marsh Pond", coords: [28.7290, 77.1820], token: "JAH-011", status: "Average 🟡", zone: "Industrial Area" },
+            { id: 12, name: "Dwarka Sector-23 Water Body", coords: [28.5350, 76.9750], token: "DWA-012", status: "Average 🟡", zone: "Residential Area" }
+        ];
+
+        window.onload = function() { 
+            initMap(); 
+            checkUrlTriggers();
+        };
+
+        function checkUrlTriggers() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('triggerAction') === 'login') {
+                sessionStorage.setItem('pending_complaint_lake', urlParams.get('lakeTarget'));
+                sessionStorage.setItem('pending_complaint_zone', urlParams.get('zoneTarget'));
+                openLoginModal();
+            }
+        }
+
+        function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
+        function openReportModal() { document.getElementById('report-modal').classList.remove('hidden'); }
+        function closeReportModal() { document.getElementById('report-modal').classList.add('hidden'); }
+
+        function openComplianceModal() {
+            document.getElementById('compliance-modal').classList.remove('hidden');
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+        function closeComplianceModal() { document.getElementById('compliance-modal').classList.add('hidden'); }
+
+        function toggleLoginFields() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            document.getElementById('otp-flow').className = role === 'user' ? "space-y-4" : "space-y-4 hidden";
+            document.getElementById('password-flow').className = role !== 'user' ? "space-y-4" : "space-y-4 hidden";
+        }
+
+        function fetchLiveLocation() {
+            const statusBox = document.getElementById('location-status');
+            const chipsBlock = document.getElementById('classification-chips');
+            const tagsContainer = document.getElementById('problem-tags-container');
+            const chipInd = document.getElementById('chip-industrial');
+            const chipRes = document.getElementById('chip-residential');
+            const resTags = document.getElementById('residential-tags');
+            const indTags = document.getElementById('industrial-tags');
+            const deskDisplay = document.getElementById('routed-desk-display');
+
+            statusBox.innerText = "📡 Mapping GIS Boundaries...";
+            statusBox.className = "text-[11px] text-blue-600 font-bold animate-pulse text-center py-1 bg-white rounded border border-gray-100";
+
+            setTimeout(() => {
+                const cachedLake = sessionStorage.getItem('pending_complaint_lake');
+                const cachedZone = sessionStorage.getItem('pending_complaint_zone');
+
+                if (cachedLake) {
+                    statusBox.innerHTML = `🛰️ QR Telemetry Synchronized: <b>${cachedLake}</b>`;
+                    currentZoneType = cachedZone.toLowerCase().includes("industrial") ? 'industrial' : 'residential';
+                    sessionStorage.removeItem('pending_complaint_lake');
+                    sessionStorage.removeItem('pending_complaint_zone');
+                } else {
+                    const lat = (28.5 + Math.random() * 0.2).toFixed(5);
+                    const lng = (77.1 + Math.random() * 0.2).toFixed(5);
+                    statusBox.innerHTML = `📍 GPS Fixed: Lat <b>${lat}</b>, Lng <b>${lng}</b>`;
+                    const zones = ['industrial', 'residential'];
+                    currentZoneType = zones[Math.floor(Math.random() * zones.length)];
+                }
+
+                statusBox.className = "text-[11px] text-green-700 font-bold text-center py-1 bg-green-50 rounded border border-green-200";
+                chipsBlock.classList.remove('hidden');
+                tagsContainer.classList.remove('hidden');
+                deskDisplay.classList.remove('hidden');
+
+                if (currentZoneType === 'industrial') {
+                    chipInd.className = "p-2 rounded-xl border text-center font-bold flex flex-col justify-center bg-amber-50 text-amber-800 border-amber-300 ring-2 ring-amber-400";
+                    chipRes.className = "p-2 rounded-xl border text-center font-bold flex flex-col justify-center bg-gray-50 text-gray-300 border-gray-100 opacity-50";
+                    indTags.classList.remove('hidden'); resTags.classList.add('hidden');
+                    deskDisplay.innerHTML = "🎯 Complaint Assigned To: <span class='underline'>DDA Desk (Land Matrix)</span>";
+                    deskDisplay.className = "text-center text-xs font-bold p-2 rounded-lg bg-amber-100 text-amber-900 border border-amber-200 mt-2";
+                } else {
+                    chipRes.className = "p-2 rounded-xl border text-center font-bold flex flex-col justify-center bg-blue-50 text-blue-800 border-blue-300 ring-2 ring-blue-400";
+                    chipInd.className = "p-2 rounded-xl border text-center font-bold flex flex-col justify-center bg-gray-50 text-gray-300 border-gray-100 opacity-50";
+                    resTags.classList.remove('hidden'); indTags.classList.add('hidden');
+                    deskDisplay.innerHTML = "🎯 Complaint Assigned To: <span class='underline'>MCD / DJB Desk</span>";
+                    deskDisplay.className = "text-center text-xs font-bold p-2 rounded-lg bg-blue-100 text-blue-900 border border-blue-200 mt-2";
+                }
+            }, 1200);
+        }
+
+        function toggleTag(element, defaultDesk) {
+            const deskDisplay = document.getElementById('routed-desk-display');
+            if (element.classList.contains('bg-blue-600') || element.classList.contains('bg-red-600')) {
+                element.className = "problem-tag px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-500 text-xs font-medium text-gray-600 transition-all cursor-pointer";
+            } else {
+                if (element.innerText.includes('Chemical')) {
+                    element.className = "problem-tag px-3 py-1.5 rounded-lg border border-red-600 bg-red-600 text-white text-xs font-bold transition-all cursor-pointer";
+                } else {
+                    element.className = "problem-tag px-3 py-1.5 rounded-lg border border-blue-600 bg-blue-600 text-white text-xs font-bold transition-all cursor-pointer";
+                }
+            }
+
+            if (currentZoneType === 'industrial') {
+                let isPollutionSelected = false;
+                document.querySelectorAll('#industrial-tags .problem-tag').forEach(tag => {
+                    if (tag.innerText.includes('Chemical') && (tag.classList.contains('bg-red-600') || tag.classList.contains('bg-blue-600'))) { isPollutionSelected = true; }
+                });
+                if (isPollutionSelected) {
+                    deskDisplay.innerHTML = "🚨 Pollution Detected! Re-routed To: <span class='underline'>DPCC Desk (Pollution Head)</span>";
+                    deskDisplay.className = "text-center text-xs font-bold p-2 rounded-lg bg-red-100 text-red-900 border border-red-200 mt-2 animate-bounce";
+                } else {
+                    deskDisplay.innerHTML = "🎯 Complaint Assigned To: <span class='underline'>DDA Desk (Land Matrix Control)</span>";
+                    deskDisplay.className = "text-center text-xs font-bold p-2 rounded-lg bg-amber-100 text-amber-900 border border-amber-200 mt-2";
+                }
+            }
+        }
+
+        function getDistance(coord1, coord2) {
+            const R = 6371; 
+            const dLat = (coord2[0] - coord1[0]) * Math.PI / 180;
+            const dLng = (coord2[1] - coord1[1]) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(coord1[0] * Math.PI / 180) * Math.cos(coord2[0] * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        }
+
+        function createCustomPin(status) {
+            let pinColor = '#3b82f6'; 
+            if (status.includes('Healthy')) pinColor = '#10b981';
+            else if (status.includes('Average')) pinColor = '#f59e0b';
+            else if (status.includes('Critical')) pinColor = '#ef4444';
+
+            return L.divIcon({ 
+                html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${pinColor}" style="width:32px; height:32px;"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" /></svg>`, 
+                className: 'custom-map-pin', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32] 
+            });
+        }
+
+        function initMap() {
+            const delhiBounds = L.latLngBounds(L.latLng(28.4000, 76.8200), L.latLng(28.8900, 77.4200));
+            map = L.map('map', { maxBounds: delhiBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 16 }).setView([28.6139, 77.2090], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            lakesData.forEach(lake => {
+                L.marker(lake.coords, { icon: createCustomPin(lake.status) }).addTo(map)
+                .bindPopup(`<div class="p-1"><h4 class="font-bold text-sm text-gray-800">${lake.name}</h4><p class="text-xs text-gray-600 mt-0.5"><b>Token ID:</b> ${lake.token}</p><p class="text-xs text-gray-600"><b>Status:</b> ${lake.status}</p></div>`);
+            });
+
+            for (let i = 0; i < lakesData.length; i++) {
+                for (let j = i + 1; j < lakesData.length; j++) {
+                    const d = getDistance(lakesData[i].coords, lakesData[j].coords);
+                    if (d <= 5) {
+                        const polyline = L.polyline([lakesData[i].coords, lakesData[j].coords], { color: '#3b82f6', weight: 2, dashArray: '5, 5', opacity: 0.8 }).addTo(map);
+                        activeLayers.push(polyline);
+                        const midLat = (lakesData[i].coords[0] + lakesData[j].coords[0]) / 2;
+                        const midLng = (lakesData[i].coords[1] + lakesData[j].coords[1]) / 2;
+                        const distanceTooltip = L.tooltip({ permanent: true, direction: 'center', className: 'distance-label' }).setContent(`📍 ${d.toFixed(2)} KM`).setLatLng([midLat, midLng]).addTo(map);
+                        activeLayers.push(distanceTooltip);
+                    }
+                }
+            }
+        }
+
+        // --- 🚨 LIVE EXPRESS BACKEND AUTH COUPLING HANDLERS ---
+        function triggerOTPGeneration() {
+            const phoneInput = document.querySelector('#otp-flow input[placeholder="Enter your phone number"]');
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+
+            if (!phone) {
+                alert("❌ Kripya valid phone number enter karein!");
+                return;
+            }
+
+            fetch('http://localhost:5000/api/auth/generate-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`💬 ${data.message}`);
+                } else {
+                    alert(`❌ Error: ${data.message}`);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Backend server offline! Ensure node server.js is running.");
+            });
+        }
+
+        function handleVerification() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const loginBtn = document.getElementById('main-login-btn');
+            const portalTitle = document.getElementById('portal-title');
+            const roleBadge = document.getElementById('role-badge');
+            const reportContainer = document.getElementById('reporting-container');
+            const roleContent = document.getElementById('role-specific-content');
+            const rankingSection = document.getElementById('ranking-section');
+            const analyticsBtn = document.getElementById('analytics-btn');
+
+            const phoneInput = document.querySelector('#otp-flow input[placeholder="Enter your phone number"]');
+            const otpInput = document.querySelector('#otp-flow input[placeholder="Enter OTP"]');
+            const securityIdInput = document.querySelector('#password-flow input[placeholder="Enter Security ID"]');
+            const passwordInput = document.querySelector('#password-flow input[placeholder="Enter Password"]');
+
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            const otp = otpInput ? otpInput.value.trim() : '';
+            const securityId = securityIdInput ? securityIdInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value.trim() : '';
+
+            let requestPayload = { role: role };
+            if (role === 'user') {
+                requestPayload.phone = phone;
+                requestPayload.otp = otp;
+            } else {
+                requestPayload.securityId = securityId;
+                requestPayload.password = password;
+            }
+
+            fetch('http://localhost:5000/api/auth/verify-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestPayload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (role === 'admin' || securityId.toLowerCase().startsWith('c') || securityId.toLowerCase().startsWith('w')) {
+                        window.location.href = data.redirectUrl;
+                        return;
+                    }
+
+                    // Render Local Citizen Grid Dashboard Context natively
+                    reportContainer.innerHTML = '';
+                    roleContent.innerHTML = '';
+                    roleContent.classList.add('hidden');
+                    roleBadge.classList.remove('hidden');
+                    rankingSection.classList.remove('hidden');
+                    analyticsBtn.className = "w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 px-4 rounded-xl border border-blue-200 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer mt-auto shrink-0 text-xs";
+
+                    portalTitle.innerText = "Citizen Dashboard";
+                    roleBadge.innerText = "Citizen";
+                    roleBadge.className = "bg-teal-100 text-teal-800 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1";
+                    reportContainer.innerHTML = `<button onclick='openReportModal()' class='w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs mb-2 cursor-pointer shadow-md'>📋 Report Water Body</button>`;
+                    rankingSection.classList.add('hidden');
+                    analyticsBtn.classList.add('hidden');
+
+                    roleContent.classList.remove('hidden');
+                    roleContent.innerHTML = `
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden flex flex-col flex-1 min-h-0">
+                            <div class="bg-blue-600 text-white px-3 py-2 text-xs font-bold flex justify-between items-center shrink-0">
+                                <span>📋 Personal Grievance Ledger</span>
+                                <span class="bg-blue-500 text-[10px] px-1.5 py-0.5 rounded-full">Live Progress</span>
+                            </div>
+                            <div class="overflow-y-auto flex-1 p-2 text-xs font-semibold text-slate-700">
+                                <table class="w-full text-left border-collapse text-[11px]">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
+                                            <th class="p-2">Ticket ID</th>
+                                            <th class="p-2">Location / Zone</th>
+                                            <th class="p-2">Status</th>
+                                            <th class="p-2">Action / ETA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 font-medium text-gray-700">
+                                        <tr class="hover:bg-gray-50/50">
+                                            <td class="p-2 text-blue-600 font-bold">#EJ-9081</td>
+                                            <td class="p-2">Rohini Sector-7<br><span class="text-[10px] text-gray-400">🏡 Residential</span></td>
+                                            <td class="p-2"><span class="px-1.5 py-0.5 rounded-sm bg-red-100 text-red-700 text-[10px] font-bold">🔴 Active Countdown</span></td>
+                                            <td class="p-2 text-red-600 font-bold animate-pulse">⏱️ 24 Hours Left</td>
+                                        </tr>
+                                        <tr class="hover:bg-gray-50/50">
+                                            <td class="p-2 text-blue-600 font-bold">#EJ-8842</td>
+                                            <td class="p-2">Okhla Ind. Area<br><span class="text-[10px] text-gray-400">🏭 Industrial</span></td>
+                                            <td class="p-2"><span class="px-1.5 py-0.5 rounded-sm bg-amber-100 text-amber-700 text-[10px] font-bold">🟡 Under Review</span></td>
+                                            <td class="p-2 text-gray-500">⚙️ Action Pending</td>
+                                        </tr>
+                                        <tr class="hover:bg-gray-50/50">
+                                            <td class="p-2 text-blue-600 font-bold">#EJ-7561</td>
+                                            <td class="p-2">Hauz Khas Village<br><span class="text-[10px] text-gray-400">🏡 Residential</span></td>
+                                            <td class="p-2"><span class="px-1.5 py-0.5 rounded-sm bg-green-100 text-green-700 text-[10px] font-bold">🟢 Resolved</span></td>
+                                            <td class="p-2 text-green-600 font-bold">✅ Closed</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+
+                    loginBtn.innerHTML = "Logout 🔄";
+                    loginBtn.onclick = function() { sessionStorage.clear(); location.reload(); };
+                    closeLoginModal();
+                } else {
+                    alert(`❌ Authentication Failed: ${data.message}`);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Error syncing validation arrays with the local Express engine Node.");
+            });
+        }
+
+        // DOM dynamic attribute listener hook insertion for custom modal trigger overrides
+        document.addEventListener("DOMContentLoaded", function() {
+            const otpBtn = document.querySelector('#otp-flow button');
+            if (otpBtn) {
+                otpBtn.setAttribute('onclick', 'triggerOTPGeneration()');
+            }
+        });
+    </script>
+</body>
+</html>

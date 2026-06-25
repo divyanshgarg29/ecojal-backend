@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Welcome</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .bg-water {
+            background-image: linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)), url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 h-screen overflow-hidden">
+
+    <div class="bg-water h-full flex flex-col justify-center items-center text-center p-4">
+        <h1 class="text-7xl font-extrabold text-gray-900 tracking-tight mb-4">EcoJal</h1>
+        <p class="text-2xl font-medium text-amber-900 max-w-2xl mb-8">
+            "A Citizen-Driven Network for Real-Time Water Body Monitoring"
+        </p>
+        
+        <a href="map.html" class="bg-blue-500 hover:bg-blue-600 text-white text-xl font-semibold px-8 py-4 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-3 cursor-pointer no-underline">
+            Explore Live GIS Map <span>🗺️</span>
+        </a>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Admin Control Center</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Style for distance text on map lines */
+        .distance-label {
+            background: white;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: bold;
+            font-size: 10px;
+            color: #1d4ed8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 h-screen flex flex-col overflow-hidden">
+
+    <div class="w-full bg-slate-900 h-16 shadow-md z-30 flex justify-between items-center px-6 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-black text-white tracking-tight">EcoJal <span class="text-amber-500 font-bold text-sm bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800/40">ADMIN PORTAL</span></h2>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3 border-r border-slate-800 pr-5">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100" alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-amber-500/60 shadow-inner">
+                <div class="text-left hidden sm:block">
+                    <div class="text-xs font-black text-white tracking-wide">Meenakshi Sharma</div>
+                    <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                        <span class="text-amber-500 font-bold">MCD Desk Officer</span> • ID: #ADM-9411
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-xs text-slate-400 font-medium bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Root Server Live
+            </div>
+            <button onclick="window.location.href='index.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2 rounded-xl border border-slate-700 transition-all text-xs cursor-pointer">
+                ⬅️ Exit to Map
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 w-full h-[calc(100vh-64px)] relative overflow-hidden">
+        
+        <div class="w-[480px] bg-gray-50 h-full border-r border-gray-200 z-20 flex flex-col shadow-xl p-4 space-y-4 shrink-0 justify-between">
+            
+            <div class="space-y-4 overflow-y-auto flex-1 pr-1">
+                <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 shrink-0">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-lg">🛰️</span>
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-sm">Satellite Rules & NDWI Engine</h3>
+                            <p class="text-[11px] text-gray-400">Configure remote sensing parameters.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-200/60 text-xs">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Critical NDWI Limit</label>
+                            <input type="text" value="< 0.2" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-bold text-red-600 focus:outline-hidden bg-red-50/30 border-red-200" disabled>
+                        </div>
+                        <div>
+    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Satellite Pass Frequency</label>
+    <select class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-semibold text-gray-700 focus:outline-hidden text-xs">
+        <option>Every 6 Hours (Multi-Satellite Constellation Sync)</option>
+        <option>Every 12 Hours (High-Revisit Overlay)</option>
+        <option>Real-Time Priority Tasking (Commercial SAR Request)</option>
+    </select>
+</div>
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 rounded-lg transition-all shadow-xs cursor-pointer">
+                            Update Radar Rules
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-xs border border-gray-100 flex flex-col shrink-0 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50/50 space-y-3">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-sm">🔧 Executive Management Desk (All Tickets)</h3>
+                        </div>
+                        <div id="dept-filter-container" class="flex flex-wrap gap-1 bg-gray-200/60 p-1 rounded-lg">
+                            <button data-dept="ALL" class="dept-btn px-2.5 py-1 text-[10px] font-bold rounded-md bg-blue-600 text-white shadow-xs cursor-pointer transition-all">All (4)</button>
+                            <button data-dept="MCD" class="dept-btn px-2.5 py-1 text-[10px] font-semibold rounded-md text-gray-600 hover:bg-white/50 cursor-pointer transition-all">MCD</button>
+                            <button data-dept="DJB" class="dept-btn px-2.5 py-1 text-[10px] font-semibold rounded-md text-gray-600 hover:bg-white/50 cursor-pointer transition-all">DJB</button>
+                            <button data-dept="DDA" class="dept-btn px-2.5 py-1 text-[10px] font-semibold rounded-md text-gray-600 hover:bg-white/50 cursor-pointer transition-all">DDA</button>
+                            <button data-dept="DPCC" class="dept-btn px-2.5 py-1 text-[10px] font-bold rounded-md text-red-700 hover:bg-white/50 cursor-pointer transition-all">DPCC 🧪</button>
+                        </div>
+                    </div>
+                    
+                    <div class="max-h-[280px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <tbody id="ticket-table-body" class="text-xs divide-y divide-gray-100 text-gray-700 font-medium">
+                                <tr class="ticket-row hover:bg-gray-50/80 transition-colors" data-department="DPCC">
+                                    <td class="p-3"><span class="font-mono font-bold text-blue-600">#TK-1042</span><div class="font-bold text-gray-800 text-[11px]">Okhla Drainage</div></td>
+                                    <td class="p-3"><span class="bg-red-50 text-red-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DPCC</span></td>
+                                    <td class="p-3"><div><div class="text-[9px] mb-0.5">75%</div><div class="w-20 bg-gray-200 h-1 rounded-full"><div class="bg-blue-600 h-full" style="width: 75%"></div></div></div></td>
+                                    <td class="p-3"><span class="text-emerald-600 font-bold text-[10px]">⏳ 34h 12m</span></td>
+                                </tr>
+                                <tr class="ticket-row hover:bg-gray-50/80 transition-colors bg-red-50/10" data-department="MCD">
+                                    <td class="p-3"><span class="font-mono font-bold text-blue-600">#TK-0981</span><div class="font-bold text-gray-800 text-[11px]">Sanjay Lake Dump</div></td>
+                                    <td class="p-3"><span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">MCD</span></td>
+                                    <td class="p-3"><div><div class="text-[9px] mb-0.5">20%</div><div class="w-20 bg-gray-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width: 20%"></div></div></div></td>
+                                    <td class="p-3"><span class="text-red-600 font-black text-[10px]">🛑 BREACHED</span></td>
+                                </tr>
+                                <tr class="ticket-row hover:bg-gray-50/80 transition-colors" data-department="DJB">
+                                    <td class="p-3"><span class="font-mono font-bold text-blue-600">#TK-1011</span><div class="font-bold text-gray-800 text-[11px]">Bhalswa Sewage</div></td>
+                                    <td class="p-3"><span class="bg-cyan-50 text-cyan-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DJB</span></td>
+                                    <td class="p-3"><div><div class="text-[9px] mb-0.5">50%</div><div class="w-20 bg-gray-200 h-1 rounded-full"><div class="bg-amber-500 h-full" style="width: 50%"></div></div></div></td>
+                                    <td class="p-3"><span class="text-emerald-600 font-bold text-[10px]">⏳ 08h 44m</span></td>
+                                </tr>
+                                <tr class="ticket-row hover:bg-gray-50/80 transition-colors bg-red-50/10" data-department="DDA">
+                                    <td class="p-3"><span class="font-mono font-bold text-blue-600">#TK-0884</span><div class="font-bold text-gray-800 text-[11px]">Ghazipur Encroach</div></td>
+                                    <td class="p-3"><span class="bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-bold">DDA</span></td>
+                                    <td class="p-3"><div><div class="text-[9px] mb-0.5">0%</div><div class="w-20 bg-gray-200 h-1 rounded-full"><div class="bg-red-600 h-full" style="width: 0%"></div></div></div></td>
+                                    <td class="p-3"><span class="text-red-600 font-black text-[10px]">🛑 BREACHED</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2 shrink-0">
+                <button onclick="openEscalatedModal()" class="w-full bg-gradient-to-r from-red-500 to-amber-600 hover:from-red-600 hover:to-amber-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer border border-red-600/20 text-xs tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> ⚠️ Show Escalated Reports
+                </button>
+            </div>
+
+        </div>
+
+        <div id="map" class="flex-1 h-full z-10"></div>
+    </div>
+
+    <div id="escalated-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-100 relative border-t-4 border-red-500 animate-fadeIn">
+            <button onclick="closeEscalatedModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer transition-colors">✕</button>
+            
+            <h3 class="text-lg font-black text-red-900 mb-1 flex items-center gap-2 tracking-wide">
+                🚨 ESCALATED REPORTS DESK
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Immediate administrative actions or enforcement triggers are required for breached lifecycles.</p>
+
+            <div class="overflow-hidden border border-gray-100 rounded-xl max-h-[350px] overflow-y-auto mb-2">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <th class="p-3">Ticket ID</th>
+                            <th class="p-3">Grievance / Issue</th>
+                            <th class="p-3">Desk</th>
+                            <th class="p-3 text-center">Enforcement Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-xs font-semibold text-slate-700 divide-y divide-gray-100">
+                        <tr class="bg-red-50/10 hover:bg-red-50/40 transition-colors">
+                            <td class="p-3 font-mono font-bold text-red-600">#TK-0981</td>
+                            <td class="p-3">Sanjay Lake Slum Dump</td>
+                            <td class="p-3"><span class="bg-blue-100 text-blue-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded">MCD</span></td>
+                            <td class="p-3 text-center"><button onclick="alert('Notice dispatched to MCD Field Force! 📄')" class="bg-red-600 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-sm hover:bg-red-700 cursor-pointer transition-all">Issue Notice</button></td>
+                        </tr>
+                        <tr class="bg-red-50/10 hover:bg-red-50/40 transition-colors">
+                            <td class="p-3 font-mono font-bold text-red-600">#TK-0884</td>
+                            <td class="p-3">Ghazipur Structural Concrete</td>
+                            <td class="p-3"><span class="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded">DDA</span></td>
+                            <td class="p-3 text-center"><button onclick="alert('Demolition squad alerted via DDA Matrix! 🏗️')" class="bg-red-600 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-sm hover:bg-red-700 cursor-pointer transition-all">Force Demo</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let activeLayers = [];
+        
+        // Master Clean 12 Pins Data Array
+        const lakesData = [
+            { id: 1, name: "Bhalswa Lake", coords: [28.7408, 77.1688], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 2, name: "Hauz Khas Lake", coords: [28.5463, 77.2036], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 3, name: "Sanjay Lake", coords: [28.6115, 77.3015], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 4, name: "Najafgarh Jheel", coords: [28.4984, 76.9424], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 5, name: "Okhla Bird Sanctuary Area", coords: [28.5645, 77.3120], status: "Healthy 🟢", zone: "Industrial Area" },
+            { id: 6, name: "Purana Qila Lake", coords: [28.6094, 77.2436], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 7, name: "Ghazipur Jheel", coords: [28.6212, 77.3148], status: "Critical 🔴", zone: "Industrial Area" },
+            { id: 8, name: "Deer Park Lake", coords: [28.5492, 77.1950], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 9, name: "Lodhi Gardens Pond", coords: [28.5930, 77.2198], status: "Average 🟡", zone: "Residential Area" },
+            { id: 10, name: "Mayur Vihar Pocket-3 Pond", coords: [28.6040, 77.2940], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 11, name: "Jahangirpuri Marsh Pond", coords: [28.7290, 77.1820], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 12, name: "Dwarka Sector-23 Water Body", coords: [28.5350, 76.9750], status: "Average 🟡", zone: "Residential Area" }
+        ];
+
+        // Modal Controls
+        function openEscalatedModal() { document.getElementById('escalated-modal').classList.remove('hidden'); }
+        function closeEscalatedModal() { document.getElementById('escalated-modal').classList.add('hidden'); }
+
+        function createCustomPin(status) {
+            let pinColor = '#3b82f6'; 
+            if (status.includes('Healthy')) pinColor = '#10b981';
+            else if (status.includes('Average')) pinColor = '#f59e0b';
+            else if (status.includes('Critical')) pinColor = '#ef4444';
+
+            const svgTemplate = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${pinColor}" style="width:32px; height:32px;">
+                    <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" />
+                </svg>
+            `;
+            return L.divIcon({
+                html: svgTemplate,
+                className: 'custom-map-pin',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+        }
+
+        function getDistance(coord1, coord2) {
+            const R = 6371; 
+            const dLat = (coord2[0] - coord1[0]) * Math.PI / 180;
+            const dLng = (coord2[1] - coord1[1]) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(coord1[0] * Math.PI / 180) * Math.cos(coord2[0] * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; 
+        }
+
+        function initAdminMap() {
+            const delhiBounds = L.latLngBounds(L.latLng(28.4000, 76.8200), L.latLng(28.8900, 77.4200));
+            map = L.map('map', {
+                maxBounds: delhiBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 16
+            }).setView([28.6139, 77.2090], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            lakesData.forEach(lake => {
+                const content = `<div class="p-1">
+                                    <h4 class="font-bold text-sm text-gray-800">${lake.name}</h4>
+                                    <p class="text-xs text-gray-600 mt-0.5"><b>Status:</b> ${lake.status}</p>
+                                    <p class="text-xs text-gray-600"><b>Area Type:</b> ${lake.zone}</p>
+                                 </div>`;
+                
+                const marker = L.marker(lake.coords, { icon: createCustomPin(lake.status) }).addTo(map).bindPopup(content);
+                activeLayers.push(marker);
+            });
+
+            for (let i = 0; i < lakesData.length; i++) {
+                for (let j = i + 1; j < lakesData.length; j++) {
+                    const lakeA = lakesData[i];
+                    const lakeB = lakesData[j];
+                    const distance = getDistance(lakeA.coords, lakeB.coords);
+
+                    if (distance <= 5) {
+                        const polyline = L.polyline([lakeA.coords, lakeB.coords], {
+                            color: '#3b82f6', weight: 2, dashArray: '5, 5', opacity: 0.8
+                        }).addTo(map);
+                        activeLayers.push(polyline);
+
+                        const midLat = (lakeA.coords[0] + lakeB.coords[0]) / 2;
+                        const midLng = (lakeA.coords[1] + lakeB.coords[1]) / 2;
+
+                        const distanceTooltip = L.tooltip({
+                            permanent: true, direction: 'center', className: 'distance-label'
+                        })
+                        .setContent(`📍 ${distance.toFixed(2)} KM`)
+                        .setLatLng([midLat, midLng])
+                        .addTo(map);
+
+                        activeLayers.push(distanceTooltip);
+                    }
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const filterButtons = document.querySelectorAll(".dept-btn");
+            const rows = document.querySelectorAll(".ticket-row");
+
+            filterButtons.forEach(btn => {
+                btn.addEventListener("click", function() {
+                    filterButtons.forEach(b => {
+                        b.classList.remove("bg-blue-600", "text-white");
+                        b.classList.add("text-gray-600", "hover:bg-white/50");
+                    });
+
+                    this.classList.remove("text-gray-600", "hover:bg-white/50");
+                    this.classList.add("bg-blue-600", "text-white");
+
+                    const selectedDept = this.getAttribute("data-dept");
+                    rows.forEach(row => {
+                        if (selectedDept === "ALL" || row.getAttribute("data-department") === selectedDept) {
+                            row.style.display = "";
+                        } else {
+                            row.style.display = "none";
+                        }
+                    });
+                });
+            });
+        });
+
+        window.onload = function() { initAdminMap(); };
+    </script>
+</body>
+</html>

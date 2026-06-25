@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Worker Field Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .leaflet-container {
+            background: #f3f4f6 !important;
+        }
+        .distance-label {
+            background: white;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: bold;
+            font-size: 10px;
+            color: #1d4ed8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 h-screen overflow-hidden flex flex-col relative">
+        
+    <div class="w-full bg-blue-600 h-16 shadow-md z-20 flex justify-between items-center px-6 shrink-0 text-white">
+        <a href="index.html" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all text-decoration-none text-white">
+            <h2 class="text-2xl font-black tracking-tight">EcoJal</h2>
+            <span class="bg-blue-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-ping"></span> On-Field Worker Console
+            </span>
+        </a>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 bg-blue-700/50 py-1.5 px-3 rounded-xl border border-blue-500/30">
+                <div class="w-9 h-9 rounded-full bg-slate-200 border-2 border-emerald-400 overflow-hidden flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-slate-600 mt-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-black tracking-wide">Ramesh Kumar</p>
+                    <p class="text-[9px] text-emerald-300 font-bold">ID: EMP-2026-B4 <span class="text-blue-200 mx-0.5">|</span> Team Bravo</p>
+                    <p class="text-[8px] text-blue-100 font-semibold uppercase tracking-wider" title="Zone-4 administrative tier encompasses the structural limits of North-West Delhi parameters.">📍 District Ring: Zone-4 (North-West Delhi)</p>
+                </div>
+            </div>
+            <button onclick="window.location.href='index.html'" class="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1 cursor-pointer text-xs">
+                🔄 Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex relative min-h-0">
+        
+        <div id="worker-sidebar" class="w-1/4 bg-white h-full shadow-2xl border-r border-gray-200 flex flex-col z-10 shrink-0">
+            <div class="p-4 bg-blue-50/70 border-b border-gray-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-blue-900 text-sm uppercase">Shift Tracker</h3>
+                    <span id="shift-badge" class="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-sm">🔴 OFF DUTY</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="punch-in-btn" onclick="toggleShift(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-2 rounded-lg text-xs transition-all cursor-pointer text-center">
+                        Punch In
+                    </button>
+                    <button id="punch-out-btn" onclick="toggleShift(false)" class="bg-gray-300 text-gray-500 font-bold py-2 px-2 rounded-lg text-xs cursor-not-allowed" disabled>
+                        Punch Out
+                    </button>
+                </div>
+                <p id="time-log" class="text-[10px] text-gray-500 text-center font-medium italic">Please punch in to unlock tasks.</p>
+            </div>
+            
+            <div class="p-4 flex-1 overflow-y-auto space-y-4 flex flex-col min-h-0">
+                <h4 class="font-bold text-gray-700 text-xs uppercase tracking-wider shrink-0">📋 Today's Target Sites</h4>
+                
+                <div class="overflow-y-auto pr-1 flex-1 space-y-3">
+                    <div id="task-1" class="p-3 bg-white rounded-xl shadow-2xs border-l-4 border-red-500 text-[11px] space-y-2 border border-gray-200/80">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-red-600 text-xs">📍 Rohini Sector-7 Pond</span>
+                            <span class="bg-red-100 text-red-800 text-[9px] font-bold px-1 rounded">High</span>
+                        </div>
+                        <p class="text-gray-600 font-medium"><b>Task:</b> Algae mesh skimming & clean up the outlet blockages.</p>
+                        <div class="flex gap-1.5 pt-1 border-t border-gray-100">
+                            <button onclick="zoomToSite([28.7142, 77.1147], 'Rohini Sector-7 Pond', 'Critical 🔴', true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded text-[10px] cursor-pointer">🗺️ Find Site</button>
+                            <button onclick="completeTask('task-1')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-1 rounded text-[10px] ml-auto cursor-pointer">Mark Done</button>
+                        </div>
+                    </div>
+
+                    <div id="task-2" class="p-3 bg-white rounded-xl shadow-2xs border-l-4 border-yellow-500 text-[11px] space-y-2 border border-gray-200/80">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-yellow-600 text-xs">📍 Jahangirpuri Marsh</span>
+                            <span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-1 rounded">Medium</span>
+                        </div>
+                        <p class="text-gray-600 font-medium"><b>Task:</b> Collect plastic floating waste bags along the perimeter.</p>
+                        <div class="flex gap-1.5 pt-1 border-t border-gray-100">
+                            <button onclick="zoomToSite([28.7290, 77.1820], 'Jahangirpuri Marsh Pond', 'Average 🟡', false)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded text-[10px] cursor-pointer">🗺️ Find Site</button>
+                            <button onclick="completeTask('task-2')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-1 rounded text-[10px] ml-auto cursor-pointer">Mark Done</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-2 shrink-0">
+                    <span class="block text-[10px] uppercase font-bold text-amber-800">⚠️ Field SOS Helpline</span>
+                    <button onclick="alert('Supervisor has been notified via priority dashboard notification matrix! 🚨')" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-lg text-xs transition-all cursor-pointer">
+                        🚨 Request Machinery/Back-up
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="map" class="w-3/4 h-full bg-gray-100 z-0"></div>
+    </div>
+
+    <div id="safety-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-red-200">
+            <div class="bg-red-600 text-white p-4 flex items-center gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div>
+                    <h3 class="font-black text-sm tracking-wide">HAZARD WARNING: CRITICAL WATER CORROSION</h3>
+                    <p class="text-[9px] text-red-100 font-medium">Environmental Safety & Compliance Protocol Enforced</p>
+                </div>
+            </div>
+            <div class="p-4 space-y-3 text-[11px] text-gray-700 leading-relaxed">
+                <p class="font-semibold text-gray-900">High concentrations of chemical pollutants and harmful toxic bio-waste overflows have been reported at this coordinate stream site.</p>
+                
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-1.5">
+                    <p class="font-bold text-amber-900 text-[10px] uppercase tracking-wider">Required Protective Equipment Inventory:</p>
+                    <ul class="list-disc pl-4 text-gray-600 space-y-1 font-medium">
+                        <li>Industrial High-Resistance Safety Gloves & Long Waders</li>
+                        <li>Certified Air Purifying Mask (N95/Chemical Grade Respirator)</li>
+                        <li>Insulated Anti-Corrosion Safety Boots</li>
+                    </ul>
+                </div>
+                <p class="text-[10px] text-gray-400 italic">Do not initiate operations or submerge tools until all mandatory protective gear parameters are cross-verified.</p>
+            </div>
+            <div class="p-3 bg-gray-50 border-t border-gray-100 text-right">
+                <button onclick="closeSafetyModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-1.5 rounded-lg text-[10px] cursor-pointer transition-all">
+                    I Acknowledge Safety Measures
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let activeMarkers = {};
+
+        const lakesData = [
+            { id: 1, name: "Bhalswa Lake", coords: [28.7408, 77.1688], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 2, name: "Hauz Khas Lake", coords: [28.5463, 77.2036], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 3, name: "Sanjay Lake", coords: [28.6115, 77.3015], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 4, name: "Najafgarh Jheel", coords: [28.4984, 76.9424], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 5, name: "Okhla Bird Sanctuary Area", coords: [28.5645, 77.3120], status: "Healthy 🟢", zone: "Industrial Area" },
+            { id: 6, name: "Purana Qila Lake", coords: [28.6094, 77.2436], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 7, name: "Ghazipur Jheel", coords: [28.6212, 77.3148], status: "Critical 🔴", zone: "Industrial Area" },
+            { id: 8, name: "Deer Park Lake", coords: [28.5492, 77.1950], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 10, name: "Mayur Vihar Pocket-3 Pond", coords: [28.6040, 77.2940], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 11, name: "Jahangirpuri Marsh Pond", coords: [28.7290, 77.1820], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 13, name: "Rohini Sector-7 Pond", coords: [28.7142, 77.1147], status: "Critical 🔴", zone: "Residential Area" }
+        ];
+
+        function createCustomPin(status) {
+            let pinColor = '#3b82f6'; 
+            if (status.includes('Healthy')) pinColor = '#10b981';
+            else if (status.includes('Average')) pinColor = '#f59e0b';
+            else if (status.includes('Critical')) pinColor = '#ef4444';
+
+            const svgTemplate = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${pinColor}" style="width:32px; height:32px;">
+                    <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" />
+                </svg>
+            `;
+            return L.divIcon({
+                html: svgTemplate, className: 'custom-map-pin', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
+            });
+        }
+
+        function getDistance(coord1, coord2) {
+            const R = 6371; 
+            const dLat = (coord2[0] - coord1[0]) * Math.PI / 180;
+            const dLng = (coord2[1] - coord1[1]) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(coord1[0] * Math.PI / 180) * Math.cos(coord2[0] * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        }
+
+        function initMap() {
+            const delhiBounds = L.latLngBounds(L.latLng(28.4000, 76.8200), L.latLng(28.8900, 77.4200));
+            map = L.map('map', {
+                maxBounds: delhiBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 16
+            }).setView([28.7250, 77.1500], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            lakesData.forEach(lake => {
+                const content = `<div class="p-1">
+                                    <h4 class="font-bold text-sm text-gray-800">${lake.name}</h4>
+                                    <p class="text-xs text-gray-600 mt-0.5"><b>Status:</b> ${lake.status}</p>
+                                    <p class="text-xs text-gray-600"><b>Zone:</b> ${lake.zone}</p>
+                                 </div>`;
+                
+                const marker = L.marker(lake.coords, { icon: createCustomPin(lake.status) }).addTo(map).bindPopup(content);
+                activeMarkers[lake.name] = marker;
+            });
+
+            // Distance polyline arrays logic
+            for (let i = 0; i < lakesData.length; i++) {
+                for (let j = i + 1; j < lakesData.length; j++) {
+                    const distance = getDistance(lakesData[i].coords, lakesData[j].coords);
+                    if (distance <= 5) {
+                        L.polyline([lakesData[i].coords, lakesData[j].coords], {
+                            color: '#3b82f6', weight: 2, dashArray: '5, 5', opacity: 0.8
+                        }).addTo(map);
+
+                        const midLat = (lakesData[i].coords[0] + lakesData[j].coords[0]) / 2;
+                        const midLng = (lakesData[i].coords[1] + lakesData[j].coords[1]) / 2;
+                        L.tooltip({ permanent: true, direction: 'center', className: 'distance-label' })
+                        .setContent(`📍 ${distance.toFixed(2)} KM`).setLatLng([midLat, midLng]).addTo(map);
+                    }
+                }
+            }
+        }
+
+        // Expanded Function incorporating chemical threat matrix checking
+        function zoomToSite(coords, siteName, status, hasChemicalHazard) {
+            map.setView(coords, 15, { animate: true, duration: 1.5 });
+            if(activeMarkers[siteName]) {
+                activeMarkers[siteName].openPopup();
+            }
+            // Trigger pre-flight chemical awareness model
+            if (hasChemicalHazard) {
+                setTimeout(() => {
+                    document.getElementById('safety-modal').classList.remove('hidden');
+                }, 600);
+            }
+        }
+
+        function closeSafetyModal() {
+            document.getElementById('safety-modal').classList.add('hidden');
+        }
+
+        function toggleShift(status) {
+            const badge = document.getElementById('shift-badge');
+            const inBtn = document.getElementById('punch-in-btn');
+            const outBtn = document.getElementById('punch-out-btn');
+            const logText = document.getElementById('time-log');
+            
+            if (status) {
+                badge.innerText = "🟢 ON DUTY";
+                badge.className = "bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-sm";
+                inBtn.disabled = true;
+                inBtn.className = "bg-gray-200 text-gray-400 font-bold py-2 px-2 rounded-lg text-xs cursor-not-allowed";
+                outBtn.disabled = false;
+                outBtn.className = "bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-2 rounded-lg text-xs cursor-pointer";
+                logText.innerText = "Shift active! Task controls unlocked.";
+            } else {
+                if(confirm("Punch out and close today's shift ledger?")) {
+                    badge.innerText = "🔴 OFF DUTY";
+                    badge.className = "bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-sm";
+                    inBtn.disabled = false;
+                    inBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-2 rounded-lg text-xs cursor-pointer";
+                    outBtn.disabled = true;
+                    outBtn.className = "bg-gray-300 text-gray-500 font-bold py-2 px-2 rounded-lg text-xs cursor-not-allowed";
+                    logText.innerText = "Shift ended successfully.";
+                }
+            }
+        }
+
+        function completeTask(taskId) {
+            const badge = document.getElementById('shift-badge').innerText;
+            if (badge.includes("OFF DUTY")) {
+                alert("❌ Operation Denied: Please PUNCH IN to activate your field shift session before marking tasks.");
+                return;
+            }
+            alert("Great job! Task completion pinged directly to contractor panel! 🎉");
+            document.getElementById(taskId).style.opacity = '0.4';
+            document.getElementById(taskId).innerHTML = `<div class="text-center py-2 font-bold text-gray-400">✅ Job Accomplished</div>`;
+        }
+
+        window.onload = function() { initMap(); };
+    </script>
+</body>
+</html>

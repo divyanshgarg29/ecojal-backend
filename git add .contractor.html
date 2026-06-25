@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Contractor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .leaflet-container {
+            background: #f3f4f6 !important;
+        }
+        .distance-label {
+            background: white;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: bold;
+            font-size: 10px;
+            color: #1d4ed8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 h-screen overflow-hidden flex flex-col relative">
+        
+    <div class="w-full bg-white h-16 shadow-md z-20 flex justify-between items-center px-6 border-b border-gray-200 shrink-0">
+        <a href="index.html" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all text-decoration-none">
+            <h2 class="text-2xl font-black text-blue-600 tracking-tight">EcoJal</h2>
+            <span class="bg-amber-100 text-amber-900 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Contractor Management Portal
+            </span>
+        </a>
+        
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden sm:block">
+                <p class="text-xs font-bold text-gray-800">Welcome, Om Prakash & Sons</p>
+                <p class="text-[10px] font-semibold text-gray-400">ID: CNTR-2026-DEL</p>
+            </div>
+            <button onclick="window.location.href='index.html'" class="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1 cursor-pointer text-xs">
+                🔄 Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex relative min-h-0">
+        
+        <div id="contractor-sidebar" class="w-1/3 bg-white h-full shadow-2xl border-r border-gray-200 flex flex-col z-10 shrink-0">
+            <div class="p-4 bg-amber-50/50 border-b border-gray-100 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-amber-900 text-base">Operations Control</h3>
+                <span class="text-[10px] bg-amber-600 text-white font-bold px-2 py-0.5 rounded-full">Zone-4 (North-West)</span>
+            </div>
+            
+            <div class="p-4 flex-1 overflow-y-auto space-y-4 flex flex-col min-h-0">
+                
+                <div class="grid grid-cols-2 gap-2 shrink-0">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-3 rounded-xl text-center">
+                        <span class="block text-[10px] uppercase font-bold text-blue-500">Active Sites</span>
+                        <span class="text-xl font-black text-blue-800">4 / 12</span>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-3 rounded-xl text-center">
+                        <span class="block text-[10px] uppercase font-bold text-emerald-500">On-field Crew</span>
+                        <span class="text-xl font-black text-emerald-800">18 Workers</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200/60 shrink-0">
+                    <h4 class="font-bold text-gray-700 text-xs mb-2 flex items-center gap-1">📋 Allocated Tenders & Stage Release Criteria</h4>
+                    <div class="space-y-2 text-[11px]">
+                        <div class="bg-white p-2.5 rounded-lg border border-gray-100 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <p class="font-bold text-gray-800">Bhalswa Desilting Proj.</p>
+                                <span class="text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded">₹4.5L Max</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1 text-center text-[9px] font-bold text-gray-500">
+                                <div class="bg-emerald-100 text-emerald-800 p-1.5 rounded border border-emerald-200">Stage 1<br>40%</div>
+                                <div class="bg-emerald-100 text-emerald-800 p-1.5 rounded border border-emerald-200">Stage 2<br>20%</div>
+                                <div class="bg-amber-100 text-amber-800 p-1.5 rounded border border-amber-200 animate-pulse">Stage 3<br>20%</div>
+                                <div class="bg-gray-100 p-1.5 rounded border border-gray-200">Stage 4<br>20%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 flex-1 min-h-0 flex flex-col">
+                    <h4 class="font-bold text-gray-700 text-xs mb-2 flex items-center gap-1 shrink-0">🛰️ Live Space Audit & Milestone Feed</h4>
+                    
+                    <div class="overflow-x-auto flex-1 min-h-0 bg-white rounded-lg border border-gray-200 shadow-2xs">
+                        <table class="w-full text-left border-collapse text-[11px]">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200 sticky top-0 z-10">
+                                    <th class="p-2">Site / Pond</th>
+                                    <th class="p-2">Audit Stage Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 font-medium text-gray-700">
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="p-2 font-bold text-gray-800">Rohini Sector-7 Pond<br><span class="text-[9px] font-medium text-gray-400">ID: #EJ-9081</span></td>
+                                    <td class="p-2">
+                                        <button id="rohini-audit-btn" onclick="openAuditTracker('Rohini Sector-7 Pond', [28.7142, 77.1147], true)" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-full cursor-pointer flex items-center gap-1 transition-all">
+                                            🟠 Stage 3: In Progress
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="p-2 font-bold text-gray-800">Bhalswa Lake<br><span class="text-[9px] font-medium text-gray-400">ID: #EJ-2041</span></td>
+                                    <td class="p-2">
+                                        <button onclick="openAuditTracker('Bhalswa Lake', [28.7408, 77.1688], false)" class="bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-full cursor-pointer flex items-center gap-1 transition-all">
+                                            🟢 Stage 4: Locked
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 p-3 rounded-xl border border-red-200 shrink-0">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] uppercase font-black text-red-700 tracking-wider">🚨 Fraud Testing Simulation</span>
+                        <span class="bg-red-600 text-white font-mono text-[8px] px-1 rounded animate-pulse">SYSTEM NODE</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mb-2">Simulate an instant land-shrunk boundary breach over Rohini metrics (ΔA > 1%).</p>
+                    <button onclick="triggerEncroachmentFraud()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] py-2 rounded-lg transition-all cursor-pointer shadow-xs">
+                        💥 Simulate Encroachment Breach
+                    </button>
+                </div>
+
+                <div onclick="openCompletedProjectsModal()" class="bg-gradient-to-r from-slate-700 to-slate-800 text-white p-3.5 rounded-xl border border-slate-600 cursor-pointer shadow-md hover:from-slate-800 hover:to-slate-900 transition-all text-center shrink-0">
+                    <span class="block font-black text-xs tracking-wider uppercase">📂 View Completed Projects Archive</span>
+                    <span class="text-[10px] text-slate-300 font-medium">Click to audit previous successful ledger sheets</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="map" class="w-2/3 h-full bg-gray-100 z-0"></div>
+    </div>
+
+    <div id="audit-drawer" class="fixed top-0 right-0 h-full w-85 bg-white shadow-2xl z-30 transform translate-x-full transition-transform duration-300 ease-in-out border-l border-gray-200 flex flex-col">
+        <div class="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-sm">Satellite Audit Ledger</h3>
+                <p id="drawer-site-name" class="text-[11px] opacity-90 font-semibold"></p>
+            </div>
+            <button onclick="closeAuditTracker()" class="text-white hover:text-gray-200 font-bold text-lg p-1 cursor-pointer">&times;</button>
+        </div>
+        <div id="drawer-timeline-content" class="p-4 flex-1 overflow-y-auto space-y-5 text-[11px]">
+            </div>
+    </div>
+
+    <div id="safety-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-red-200">
+            <div class="bg-red-600 text-white p-4 flex items-center gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div>
+                    <h3 class="font-black text-sm tracking-wide">HAZARD COMPLIANCE ALERT FOR CONTRACTOR</h3>
+                    <p class="text-[9px] text-red-100 font-medium">Mandatory Field Deployment Safety Protocol</p>
+                </div>
+            </div>
+            <div class="p-4 space-y-3 text-[11px] text-gray-700 leading-relaxed">
+                <p class="font-semibold text-gray-900">Attention Administrator: High contamination levels and chemical hazard arrays have been logged at this target location.</p>
+                
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-1.5">
+                    <p class="font-bold text-amber-900 text-[10px] uppercase tracking-wider">Ensure On-Field Crew is Dispatched with:</p>
+                    <ul class="list-disc pl-4 text-gray-600 space-y-1 font-medium">
+                        <li>Industrial High-Resistance Safety Gloves & Long Waders</li>
+                        <li>Certified Air Purifying Mask (N95/Chemical Grade Respirator)</li>
+                        <li>Insulated Anti-Corrosion Safety Boots</li>
+                    </ul>
+                </div>
+                <p class="text-[10px] text-red-500 font-semibold italic">Failure to supply regulatory protective equipment will freeze milestone escrow approvals upon satellite verification audits.</p>
+            </div>
+            <div class="p-3 bg-gray-50 border-t border-gray-100 text-right">
+                <button onclick="closeSafetyModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-1.5 rounded-lg text-[10px] cursor-pointer transition-all">
+                    I Acknowledge & Deploy Safety Kit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="completed-projects-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-slate-800 text-white p-4 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="font-black text-base">📂 Completed Projects Ledger</h3>
+                    <p class="text-[10px] text-slate-300 font-medium">Historical audit verification archives & payouts</p>
+                </div>
+                <button onclick="closeCompletedProjectsModal()" class="text-white hover:text-slate-200 font-bold text-2xl cursor-pointer">&times;</button>
+            </div>
+            
+            <div class="p-4 overflow-y-auto space-y-3 flex-1 text-[11px]">
+                <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-black text-gray-800 text-xs">🟢 Sanjay Lake Clean-Drive</span>
+                        <span class="text-green-700 font-bold bg-green-100 border border-green-200 px-2 py-0.5 rounded text-[10px]">100% Payout Disbursed</span>
+                    </div>
+                    <p class="text-gray-600 font-medium"><b>Completion Date:</b> October 14, 2025 | <b>Total Budget:</b> ₹5.20 Lakh</p>
+                    <p class="text-gray-400 text-[10px]">All 4 Space Audit passes verified natively. Final retention release closed cleanly.</p>
+                </div>
+
+                <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-black text-gray-800 text-xs">🟢 Okhla Buffer Demarcation Wall</span>
+                        <span class="text-green-700 font-bold bg-green-100 border border-green-200 px-2 py-0.5 rounded text-[10px]">100% Payout Disbursed</span>
+                    </div>
+                    <p class="text-gray-600 font-medium"><b>Completion Date:</b> January 08, 2026 | <b>Total Budget:</b> ₹3.80 Lakh</p>
+                    <p class="text-gray-400 text-[10px]">Sentinel-2 baseline verification matched perfectly. Khasra perimeter locked.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let activeMarkers = {};
+        let isEncroachmentSimulated = false; // Fraud scenario state controller variable
+
+        const lakesData = [
+            { id: 1, name: "Bhalswa Lake", coords: [28.7408, 77.1688], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 2, name: "Hauz Khas Lake", coords: [28.5463, 77.2036], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 3, name: "Sanjay Lake", coords: [28.6115, 77.3015], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 4, name: "Najafgarh Jheel", coords: [28.4984, 76.9424], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 5, name: "Okhla Bird Sanctuary Area", coords: [28.5645, 77.3120], status: "Healthy 🟢", zone: "Industrial Area" },
+            { id: 6, name: "Purana Qila Lake", coords: [28.6094, 77.2436], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 7, name: "Ghazipur Jheel", coords: [28.6212, 77.3148], status: "Critical 🔴", zone: "Industrial Area" },
+            { id: 8, name: "Deer Park Lake", coords: [28.5492, 77.1950], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 9, name: "Lodhi Gardens Pond", coords: [28.5930, 77.2198], status: "Average 🟡", zone: "Residential Area" },
+            { id: 10, name: "Mayur Vihar Pocket-3 Pond", coords: [28.6040, 77.2940], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 11, name: "Jahangirpuri Marsh Pond", coords: [28.7290, 77.1820], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 12, name: "Dwarka Sector-23 Water Body", coords: [28.5350, 76.9750], status: "Average 🟡", zone: "Residential Area" },
+            { id: 13, name: "Rohini Sector-7 Pond", coords: [28.7142, 77.1147], status: "Critical 🔴", zone: "Residential Area" }
+        ];
+
+        function createCustomPin(status) {
+            let pinColor = '#3b82f6'; 
+            if (status.includes('Healthy')) pinColor = '#10b981';
+            else if (status.includes('Average')) pinColor = '#f59e0b';
+            else if (status.includes('Critical')) pinColor = '#ef4444';
+
+            const svgTemplate = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${pinColor}" style="width:32px; height:32px;">
+                    <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" />
+                </svg>
+            `;
+            return L.divIcon({
+                html: svgTemplate, className: 'custom-map-pin', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
+            });
+        }
+
+        function getDistance(coord1, coord2) {
+            const R = 6371; 
+            const dLat = (coord2[0] - coord1[0]) * Math.PI / 180;
+            const dLng = (coord2[1] - coord1[1]) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(coord1[0] * Math.PI / 180) * Math.cos(coord2[0] * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        }
+
+        function initMap() {
+            const delhiBounds = L.latLngBounds(L.latLng(28.4000, 76.8200), L.latLng(28.8900, 77.4200));
+            map = L.map('map', { maxBounds: delhiBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 16 }).setView([28.7250, 77.1500], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            lakesData.forEach(lake => {
+                const marker = L.marker(lake.coords, { icon: createCustomPin(lake.status) }).addTo(map)
+                .bindPopup(`<h4 class="font-bold text-sm">${lake.name}</h4><p class="text-xs">Status: ${lake.status}</p><p class="text-xs">Zone: ${lake.zone}</p>`);
+                activeMarkers[lake.name] = marker;
+            });
+
+            for (let i = 0; i < lakesData.length; i++) {
+                for (let j = i + 1; j < lakesData.length; j++) {
+                    const distance = getDistance(lakesData[i].coords, lakesData[j].coords);
+                    if (distance <= 5) {
+                        L.polyline([lakesData[i].coords, lakesData[j].coords], {
+                            color: '#3b82f6', weight: 2, dashArray: '5, 5', opacity: 0.8
+                        }).addTo(map);
+
+                        const midLat = (lakesData[i].coords[0] + lakesData[j].coords[0]) / 2;
+                        const midLng = (lakesData[i].coords[1] + lakesData[j].coords[1]) / 2;
+                        L.tooltip({ permanent: true, direction: 'center', className: 'distance-label' })
+                        .setContent(`📍 ${distance.toFixed(2)} KM`)
+                        .setLatLng([midLat, midLng]).addTo(map);
+                    }
+                }
+            }
+        }
+
+        // --- 🛰️ SATELLITE INTERACTIVE TIMELINE DRAWER MATRIX CONTROLS ---
+        function openAuditTracker(siteName, coords, hasHazard) {
+            document.getElementById('drawer-site-name').innerText = `Target Site: ${siteName}`;
+            
+            const contentBox = document.getElementById('drawer-timeline-content');
+            
+            if (isEncroachmentSimulated && siteName.includes("Rohini")) {
+                contentBox.innerHTML = `
+                    <div class="bg-red-100 border border-red-300 p-2.5 rounded text-red-900 font-bold text-center uppercase tracking-wide animate-pulse">
+                        🔒 ESCROW FUNDS FROZEN: CRIMINAL ACTION DETECTED
+                    </div>
+                    <div class="relative border-l-2 border-red-500 pl-4 space-y-6 mt-2">
+                        <div class="relative">
+                            <div class="absolute -left-[21px] mt-0.5 bg-red-600 w-2.5 h-2.5 rounded-full ring-4 ring-red-100"></div>
+                            <p class="font-black text-red-700">Stage 1: Area Shrunk Check – Failed ❌</p>
+                            <p class="text-gray-600 text-[10px] font-bold mt-0.5">🚨 STATUS: FRAUD ALERT: Encroachment Detected</p>
+                            <p class="text-gray-500 text-[10px] mt-0.5">Satellite Surface Delta: ΔA = 2.45% (Tolerance limit of 1% Breached).</p>
+                            <div class="bg-red-50 border border-red-200 text-red-700 p-1.5 rounded font-medium text-[9px] mt-1">
+                                ⚖️ Programmatic Police FIR filed securely over spatial node index grid. Dispatched to DDA Desk Room.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentBox.innerHTML = `
+                    <div class="bg-blue-50 border border-blue-200 p-2 rounded text-center font-bold text-blue-900 text-[10px] uppercase tracking-wider">
+                        Stage Escrow Structure: 40% | 20% | 20% | 20%
+                    </div>
+                    <div class="relative border-l-2 border-gray-200 pl-4 space-y-6">
+                        <div class="relative">
+                            <div class="absolute -left-[21px] mt-0.5 bg-green-500 w-2.5 h-2.5 rounded-full ring-4 ring-green-100"></div>
+                            <p class="font-bold text-green-700">🟢 Stage 1: Proof Ingestion (Day 2) – Passed ✅</p>
+                            <p class="text-gray-600 text-[10px] font-medium mt-0.5">(Worker live photo + GPS matched with Khasra).</p>
+                            <span class="inline-block mt-1 bg-green-50 border border-green-200 text-green-700 font-black text-[9px] px-1.5 py-0.5 rounded">[💰 40% Escrow Capital Released]</span>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute -left-[21px] mt-0.5 bg-green-500 w-2.5 h-2.5 rounded-full ring-4 ring-green-100"></div>
+                            <p class="font-bold text-green-700">🟢 Stage 2: First Orbit Pass (Day 30) – Passed ✅</p>
+                            <p class="text-gray-600 text-[10px] font-medium mt-0.5">(Sentinel-2 NDWI: 0.45 | Area Change: 0%).</p>
+                            <span class="inline-block mt-1 bg-green-50 border border-green-200 text-green-700 font-black text-[9px] px-1.5 py-0.5 rounded">[💰 20% Escrow Milestone Released]</span>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute -left-[21px] mt-0.5 bg-amber-500 w-2.5 h-2.5 rounded-full ring-4 ring-amber-100 animate-pulse"></div>
+                            <p class="font-bold text-amber-700">🟠 Stage 3: Second Orbit Pass (Day 60) – In Progress ⏳</p>
+                            <p class="text-gray-600 text-[10px] font-medium mt-0.5">(Waiting for next Sentinel-2 overpass array).</p>
+                            <span class="inline-block mt-1 bg-amber-50 border border-amber-200 text-amber-700 font-black text-[9px] px-1.5 py-0.5 rounded">[🔒 20% Retainer Milestone Locked]</span>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute -left-[21px] mt-0.5 bg-gray-300 w-2.5 h-2.5 rounded-full ring-4 ring-gray-100"></div>
+                            <p class="font-bold text-gray-400">⚪ Stage 4: Terminal Baseline (Day 90) – Locked 🔒</p>
+                            <p class="text-gray-400 text-[10px] font-medium mt-0.5">(Final retention release pending).</p>
+                            <span class="inline-block mt-1 bg-gray-50 border border-gray-200 text-gray-400 font-black text-[9px] px-1.5 py-0.5 rounded">[🔒 Final 20% Escrow Buffer Pool]</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('audit-drawer').classList.remove('translate-x-full');
+            map.setView(coords, 14, { animate: true, duration: 1 });
+            
+            if(activeMarkers[siteName]) {
+                activeMarkers[siteName].openPopup();
+            }
+
+            if (hasHazard && !isEncroachmentSimulated) {
+                setTimeout(() => {
+                    document.getElementById('safety-modal').classList.remove('hidden');
+                }, 400);
+            }
+            
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        // --- 💥 LAND FRAUD DETECTION TRIGGER CRITERIA SYSTEM (CLEAN TEXT ALERTS) ---
+        function triggerEncroachmentFraud() {
+            isEncroachmentSimulated = true;
+            alert("Executing Satellite Mesh Recalculation Array...\nWarning: Severe Area Reduction detected over Rohini coordinates!");
+            
+            const targetBtn = document.getElementById('rohini-audit-btn');
+            if(targetBtn) {
+                targetBtn.className = "bg-red-600 border border-red-700 text-white text-[10px] font-black px-2 py-1 rounded-full animate-bounce cursor-pointer";
+                targetBtn.innerHTML = "🚨 FRAUD ALERT: Encroachment";
+            }
+            // Replaced raw latex brackets inside string arrays matching prose specifications
+            alert("System Broadcast: Breach detected (Delta A = 2.45% > 1%). Escrow frozen. Escalation ticket auto-routed to Admin Panel under DDA control parameters!");
+        }
+        
+        function closeAuditTracker() { document.getElementById('audit-drawer').classList.add('translate-x-full'); }
+        function closeSafetyModal() { document.getElementById('safety-modal').classList.add('hidden'); }
+        function openCompletedProjectsModal() { document.getElementById('completed-projects-modal').classList.remove('hidden'); }
+        function closeCompletedProjectsModal() { document.getElementById('completed-projects-modal').classList.add('hidden'); }
+
+        window.onload = function() { initMap(); };
+    </script>
+</body>
+</html>

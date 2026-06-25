@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoJal - Field Staff Force</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Distance labels overlay layout */
+        .distance-label {
+            background: white;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: bold;
+            font-size: 10px;
+            color: #1d4ed8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-50 h-screen flex flex-col overflow-hidden">
+
+    <div class="w-full bg-slate-900 h-16 shadow-md z-30 flex justify-between items-center px-6 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-black text-white tracking-tight">EcoJal <span class="text-emerald-500 font-bold text-sm bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">FIELD STAFF FORCE</span></h2>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3 border-r border-slate-800 pr-5">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="Staff Profile" class="w-9 h-9 rounded-full object-cover border-2 border-emerald-500/60 shadow-inner">
+                <div class="text-left hidden sm:block">
+                    <div class="text-xs font-black text-white tracking-wide">Ramesh Kumar</div>
+                    <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                        <span class="text-emerald-500 font-bold">On-Ground Officer</span> • Sector-4 Base
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.location.href='index.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2 rounded-xl border border-slate-700 transition-all text-xs cursor-pointer">
+                ⬅️ Exit to Home
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 w-full h-[calc(100vh-64px)] relative overflow-hidden">
+        
+        <div class="w-[420px] bg-gray-50 h-full border-r border-gray-200 z-20 flex flex-col shadow-xl p-4 space-y-4 shrink-0 overflow-y-auto">
+            
+            <div class="border-b border-gray-200 pb-2">
+                <h3 class="font-black text-gray-800 text-base tracking-tight flex items-center gap-2">
+                    📋 Ground Tasks Directory
+                </h3>
+                <p class="text-xs text-gray-400 mt-0.5">Manage and track live field inspections below.</p>
+            </div>
+
+            <div class="space-y-3 flex-1">
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-xs hover:border-gray-300 transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded border border-red-100">CRITICAL LEAKAGE</span>
+                        <span class="text-[11px] font-mono font-bold text-gray-400">#TSK-402</span>
+                    </div>
+                    <h4 class="font-bold text-gray-800 text-sm">Hauz Khas Outflow Check</h4>
+                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">Inspect the main drainage line blocking water re-route towards the ecosystem core area.</p>
+                    <div class="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center">
+                        <span class="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded">⚠️ Assigned</span>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg transition-colors cursor-pointer">Route Location</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-xs hover:border-gray-300 transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-100">ROUTINE SAMPLING</span>
+                        <span class="text-[11px] font-mono font-bold text-gray-400">#TSK-398</span>
+                    </div>
+                    <h4 class="font-bold text-gray-800 text-sm">Sanjay Lake Quality Bio-Test</h4>
+                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">Collect physical samples from eastern deck perimeter for immediate physical testing laboratory sync.</p>
+                    <div class="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center">
+                        <span class="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">🔄 In Progress</span>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg transition-colors cursor-pointer">Route Location</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="map" class="flex-1 h-full z-10"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let activeLayers = [];
+        
+        // Master Clean 12 Pins Data Array
+        const lakesData = [
+            { id: 1, name: "Bhalswa Lake", coords: [28.7408, 77.1688], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 2, name: "Hauz Khas Lake", coords: [28.5463, 77.2036], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 3, name: "Sanjay Lake", coords: [28.6115, 77.3015], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 4, name: "Najafgarh Jheel", coords: [28.4984, 76.9424], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 5, name: "Okhla Bird Sanctuary Area", coords: [28.5645, 77.3120], status: "Healthy 🟢", zone: "Industrial Area" },
+            { id: 6, name: "Purana Qila Lake", coords: [28.6094, 77.2436], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 7, name: "Ghazipur Jheel", coords: [28.6212, 77.3148], status: "Critical 🔴", zone: "Industrial Area" },
+            { id: 8, name: "Deer Park Lake", coords: [28.5492, 77.1950], status: "Healthy 🟢", zone: "Residential Area" },
+            { id: 9, name: "Lodhi Gardens Pond", coords: [28.5930, 77.2198], status: "Average 🟡", zone: "Residential Area" },
+            { id: 10, name: "Mayur Vihar Pocket-3 Pond", coords: [28.6040, 77.2940], status: "Critical 🔴", zone: "Residential Area" },
+            { id: 11, name: "Jahangirpuri Marsh Pond", coords: [28.7290, 77.1820], status: "Average 🟡", zone: "Industrial Area" },
+            { id: 12, name: "Dwarka Sector-23 Water Body", coords: [28.5350, 76.9750], status: "Average 🟡", zone: "Residential Area" }
+        ];
+
+        function createCustomPin(status) {
+            let pinColor = '#3b82f6'; 
+            if (status.includes('Healthy')) pinColor = '#10b981';
+            else if (status.includes('Average')) pinColor = '#f59e0b';
+            else if (status.includes('Critical')) pinColor = '#ef4444';
+
+            const svgTemplate = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${pinColor}" style="width:32px; height:32px;">
+                    <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" />
+                </svg>
+            `;
+            return L.divIcon({
+                html: svgTemplate,
+                className: 'custom-map-pin',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+        }
+
+        // Haversine core helper function
+        function getDistance(coord1, coord2) {
+            const R = 6371; 
+            const dLat = (coord2[0] - coord1[0]) * Math.PI / 180;
+            const dLng = (coord2[1] - coord1[1]) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(coord1[0] * Math.PI / 180) * Math.cos(coord2[0] * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; 
+        }
+
+        function initStaffMap() {
+            const delhiBounds = L.latLngBounds(L.latLng(28.4000, 76.8200), L.latLng(28.8900, 77.4200));
+            map = L.map('map', {
+                maxBounds: delhiBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 16
+            }).setView([28.6139, 77.2090], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // Print Markers
+            lakesData.forEach(lake => {
+                const content = `<div class="p-1">
+                                    <h4 class="font-bold text-sm text-gray-800">${lake.name}</h4>
+                                    <p class="text-xs text-gray-600 mt-0.5"><b>Status:</b> ${lake.status}</p>
+                                    <p class="text-xs text-gray-600"><b>Area Type:</b> ${lake.zone}</p>
+                                 </div>`;
+                
+                const marker = L.marker(lake.coords, { icon: createCustomPin(lake.status) }).addTo(map).bindPopup(content);
+                activeLayers.push(marker);
+            });
+
+            // 5km Line Grid Connections
+            for (let i = 0; i < lakesData.length; i++) {
+                for (let j = i + 1; j < lakesData.length; j++) {
+                    const lakeA = lakesData[i];
+                    const lakeB = lakesData[j];
+                    const distance = getDistance(lakeA.coords, lakeB.coords);
+
+                    if (distance <= 5) {
+                        const polyline = L.polyline([lakeA.coords, lakeB.coords], {
+                            color: '#3b82f6', weight: 2, dashArray: '5, 5', opacity: 0.8
+                        }).addTo(map);
+                        activeLayers.push(polyline);
+
+                        const midLat = (lakeA.coords[0] + lakeB.coords[0]) / 2;
+                        const midLng = (lakeA.coords[1] + lakeB.coords[1]) / 2;
+
+                        const distanceTooltip = L.tooltip({
+                            permanent: true, direction: 'center', className: 'distance-label'
+                        })
+                        .setContent(`📍 ${distance.toFixed(2)} KM`)
+                        .setLatLng([midLat, midLng])
+                        .addTo(map);
+
+                        activeLayers.push(distanceTooltip);
+                    }
+                }
+            }
+        }
+
+        window.onload = function() {
+            initStaffMap();
+        };
+    </script>
+</body>
+</html>
